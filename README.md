@@ -26,7 +26,7 @@ El proyecto se desarrollará utilizando la metodología ágil **Scrum**, organiz
 
 ## Integrantes del equipo
 - Integrante 1: SANCHEZ RAMOS Giovany
-- Integrante 2: __________________
+- Integrante 2: CALDERON ALIAGA kenedy
 
 ## Estado del proyecto
 Proyecto en fase inicial (Sprint 0).
