@@ -1,0 +1,181 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-violet-500;
+  }
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--sp-scrollbar, #e2e8f0);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--sp-scrollbar, #cbd5e1);
+    filter: brightness(1.15);
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn text-white shadow-sm hover:shadow-md hover:opacity-95 active:scale-[0.98];
+    background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+  }
+  .btn-secondary {
+    @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-sm focus-visible:outline-slate-500 active:scale-[0.98];
+  }
+  .btn-danger {
+    @apply btn text-white shadow-sm hover:shadow-md hover:opacity-95 active:scale-[0.98];
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+  }
+  .input {
+    @apply block w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm placeholder-slate-400 shadow-sm transition-all focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-200 disabled:bg-slate-100 disabled:cursor-not-allowed;
+  }
+  .label {
+    @apply block text-sm font-semibold text-slate-700 mb-1.5;
+  }
+  .card {
+    @apply bg-white rounded-2xl border border-slate-100 shadow-sm;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+  /* Stat card top stripe */
+  .stat-card {
+    @apply bg-white rounded-2xl overflow-hidden shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md;
+    border: 1px solid #f1f0fb;
+  }
+}
+
+/* ── Student portal theme tokens ── */
+[data-sp-theme="dark"] {
+  --sp-bg:              #07080f;
+  --sp-sb-bg:           #0c0d18;
+  --sp-sb-border:       rgba(255,255,255,0.06);
+  --sp-sb-inner-border: rgba(255,255,255,0.05);
+  --sp-sb-nav-text:     rgba(248,250,252,0.45);
+  --sp-sb-user-bg:      rgba(255,255,255,0.04);
+  --sp-sb-user-border:  rgba(255,255,255,0.07);
+  --sp-sb-user-sub:     rgba(255,255,255,0.3);
+  --sp-sb-label:        rgba(255,255,255,0.2);
+  --sp-sb-footer:       rgba(255,255,255,0.12);
+
+  --sp-card-bg:     rgba(255,255,255,0.04);
+  --sp-card-border: rgba(255,255,255,0.07);
+  --sp-t1:          #f1f5f9;
+  --sp-t2:          rgba(241,245,249,0.55);
+  --sp-t3:          rgba(241,245,249,0.3);
+  --sp-divider:     rgba(255,255,255,0.06);
+  --sp-input-bg:    rgba(255,255,255,0.05);
+  --sp-input-brd:   rgba(255,255,255,0.09);
+  --sp-input-txt:   #f1f5f9;
+  --sp-tab-bg:      rgba(255,255,255,0.04);
+  --sp-tab-brd:     rgba(255,255,255,0.06);
+  --sp-tab-active:  rgba(255,255,255,0.08);
+  --sp-row-hover:   rgba(255,255,255,0.06);
+  --sp-cal-header:  rgba(255,255,255,0.02);
+  --sp-grid-cell:   rgba(255,255,255,0.04);
+  --sp-grid-hover:  rgba(99,102,241,0.12);
+  --sp-scrollbar:   rgba(255,255,255,0.1);
+}
+
+[data-sp-theme="light"] {
+  --sp-bg:              #f0f4ff;
+  --sp-sb-bg:           #ffffff;
+  --sp-sb-border:       #e2e8f0;
+  --sp-sb-inner-border: #f1f5f9;
+  --sp-sb-nav-text:     #64748b;
+  --sp-sb-user-bg:      #f8fafc;
+  --sp-sb-user-border:  #e2e8f0;
+  --sp-sb-user-sub:     #94a3b8;
+  --sp-sb-label:        #94a3b8;
+  --sp-sb-footer:       #cbd5e1;
+
+  --sp-card-bg:     #ffffff;
+  --sp-card-border: #e2e8f0;
+  --sp-t1:          #0f172a;
+  --sp-t2:          rgba(15,23,42,0.65);
+  --sp-t3:          rgba(15,23,42,0.45);
+  --sp-divider:     #e8edf5;
+  --sp-input-bg:    #ffffff;
+  --sp-input-brd:   #e2e8f0;
+  --sp-input-txt:   #0f172a;
+  --sp-tab-bg:      #eef1f8;
+  --sp-tab-brd:     #e2e8f0;
+  --sp-tab-active:  #ffffff;
+  --sp-row-hover:   #f8fafc;
+  --sp-cal-header:  #f8fafc;
+  --sp-grid-cell:   #f8fafc;
+  --sp-grid-hover:  #ede9fe;
+  --sp-scrollbar:   #cbd5e1;
+}
+
+/* ── Animations ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 4px currentColor; }
+  50%       { box-shadow: 0 0 10px currentColor; }
+}
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+
+.animate-fadeIn   { animation: fadeIn  0.25s ease-out; }
+.animate-slideIn  { animation: slideIn 0.2s  ease-out; }
+.animate-slideUp  { animation: slideUp 0.3s  ease-out; }
+.animate-scaleIn  { animation: scaleIn 0.2s  ease-out; }
+
+/* Staggered children */
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+
+/* Shimmer loading skeleton */
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
