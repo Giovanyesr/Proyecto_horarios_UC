@@ -176,6 +176,23 @@ async function seed() {
     console.log('Admin user : already exists')
   }
 
+  // ── Demo student user (alumno01 → U2024001) ───────────────────────────────
+  const alumnoExists = await User.findOne({ username: 'alumno01' })
+  if (!alumnoExists) {
+    const linkedStudent = students.find(s => s.student_code === 'U2024001')
+    const password_hash = await bcrypt.hash('alumno123', 12)
+    await User.create({
+      username: 'alumno01',
+      email: linkedStudent?.email ?? 'u2024001@uc.edu.pe',
+      password_hash,
+      role: 'student',
+      student_id: linkedStudent?._id ?? null,
+    })
+    console.log('Student user: created (alumno01 / alumno123)')
+  } else {
+    console.log('Student user: already exists')
+  }
+
   // ── AllowedEmails for all students ────────────────────────────────────────
   const adminUser = await User.findOne({ username: 'admin' })
   for (const student of students) {
