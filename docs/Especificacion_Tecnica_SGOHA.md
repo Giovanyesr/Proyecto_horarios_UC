@@ -18,7 +18,7 @@ CALDERON ALIAGA, Kenedy
 
 *Docente: Mg. Daniel Gamarra Moreno*
 
-Huancayo, Perú --- 2025
+Huancayo, Perú --- 2026
 
 **1. INTRODUCCIÓN**
 
