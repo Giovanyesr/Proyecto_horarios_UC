@@ -1,6 +1,6 @@
 # 📅 Sistema de Generación Óptima de Horarios Académicos
 ### Universidad Continental — Ingeniería de Sistemas e Informática
-### Taller de Investigación 2 | Docente: Daniel Gamarra Moreno
+### Taller de Proyectos 2 | Docente: Daniel Gamarra Moreno
 
 ---
 
@@ -277,4 +277,4 @@ El sistema está diseñado para ser desplegado de forma independiente:
 
 ## 📄 Licencia
 
-Proyecto académico desarrollado para el curso **Taller de Investigación 2** — Universidad Continental, 2025.
+Proyecto académico desarrollado para el curso **Taller de Proyectos 2** — Universidad Continental, 2025.
