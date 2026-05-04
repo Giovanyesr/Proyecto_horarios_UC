@@ -21,7 +21,7 @@
 
 | Integrante | Código | Rol |
 |---|---|---|
-| SANCHEZ RAMOS, Giovany | U20211B994 | Full-Stack / Scrum Master |
+| SANCHEZ RAMOS, Giovany | U20211B994 | Full-Stack  |
 | CALDERON ALIAGA, Kenedy | U20211C078 | Full-Stack / QA |
 
 ---
