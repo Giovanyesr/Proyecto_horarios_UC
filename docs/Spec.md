@@ -1,0 +1,370 @@
+# SPEC.md — Especificación Formal del Sistema
+## Sistema de Generación Óptima de Horarios Académicos (SGOHA)
+**Universidad Continental | Taller de Proyectos 2 | 2026**
+
+> **Nota SDD:** Este documento es el contrato de comportamiento del sistema. La implementación debe derivarse de esta especificación, no al revés. Todo criterio de aceptación aquí definido tiene al menos un test automatizado asociado en `tests/csp/`.
+
+---
+
+## 1. DESCRIPCIÓN GENERAL DEL SISTEMA
+
+El SGOHA es una aplicación web full-stack (stack MERN) que resuelve el problema de asignación automática de horarios académicos universitarios bajo currículo flexible. El sistema modela el problema como un **CSP (Constraint Satisfaction Problem)** y lo resuelve mediante backtracking con heurísticas MRV y LCV, precedido por propagación de restricciones AC-3.
+
+**Actores:**
+- `Administrador` — gestiona entidades y ejecuta la generación.
+- `Alumno` — consulta su horario y registra disponibilidad.
+- `Sistema CSP` — actor interno que ejecuta el algoritmo.
+
+---
+
+## 2. ENTRADAS DEL SISTEMA
+
+### 2.1 Entradas de Autenticación
+
+| Campo       | Tipo     | Requerido | Validaciones                                |
+|-------------|----------|-----------|---------------------------------------------|
+| `username`  | `string` | Sí        | No vacío, mínimo 4 caracteres               |
+| `password`  | `string` | Sí        | No vacío, mínimo 6 caracteres               |
+| `role`      | `enum`   | Sí        | Valores válidos: `admin`, `student`         |
+
+### 2.2 Entradas de Gestión de Docentes
+
+| Campo              | Tipo       | Requerido | Validaciones                                         |
+|--------------------|------------|-----------|------------------------------------------------------|
+| `code`             | `string`   | Sí        | Único en el sistema. Formato: `DOC-XXXX`             |
+| `firstName`        | `string`   | Sí        | No vacío                                             |
+| `lastName`         | `string`   | Sí        | No vacío                                             |
+| `email`            | `string`   | Sí        | Formato email válido. Único en el sistema            |
+| `department`       | `string`   | Sí        | No vacío                                             |
+| `maxWeeklyHours`   | `number`   | Sí        | Entero positivo, rango 1–40                          |
+| `availability`     | `object[]` | Sí        | Array de bloques `{dayOfWeek, startTime, endTime}`   |
+
+**Estructura de disponibilidad horaria (por bloque):**
+
+```json
+{
+  "dayOfWeek": "Monday",      // "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday"
+  "startTime": "08:00",       // Formato HH:MM, múltiplo de 30 min
+  "endTime": "10:00"          // Formato HH:MM, posterior a startTime
+}
+```
+
+### 2.3 Entradas de Gestión de Cursos
+
+| Campo           | Tipo     | Requerido | Validaciones                                         |
+|-----------------|----------|-----------|------------------------------------------------------|
+| `code`          | `string` | Sí        | Único en el sistema. Formato: `CUR-XXXX`             |
+| `name`          | `string` | Sí        | No vacío                                             |
+| `credits`       | `number` | Sí        | Entero 1–10                                          |
+| `weeklyHours`   | `number` | Sí        | Entero 1–20                                          |
+| `teacherId`     | `string` | Sí        | ID válido de un docente existente en el sistema      |
+| `courseType`    | `enum`   | Sí        | `lecture` \| `lab` \| `computer_lab` \| `seminar`   |
+
+### 2.4 Entradas de Gestión de Aulas
+
+| Campo        | Tipo     | Requerido | Validaciones                                         |
+|--------------|----------|-----------|------------------------------------------------------|
+| `code`       | `string` | Sí        | Único en el sistema                                  |
+| `building`   | `string` | Sí        | No vacío                                             |
+| `capacity`   | `number` | Sí        | Entero positivo, mínimo 1                            |
+| `type`       | `enum`   | Sí        | `lecture` \| `lab` \| `computer_lab` \| `seminar`   |
+| `equipment`  | `string[]`| No       | Lista de equipamiento disponible                     |
+
+### 2.5 Entradas de Gestión de Matrículas
+
+| Campo              | Tipo     | Requerido | Validaciones                                          |
+|--------------------|----------|-----------|-------------------------------------------------------|
+| `studentId`        | `string` | Sí        | ID válido de alumno existente                         |
+| `courseId`         | `string` | Sí        | ID válido de curso existente                          |
+| `academicPeriod`   | `string` | Sí        | Formato: `YYYY-S` (ej: `2026-1`)                      |
+| `status`           | `enum`   | Sí        | `enrolled` \| `withdrawn`                             |
+
+### 2.6 Entradas del Algoritmo CSP (Generación de Horarios)
+
+| Campo            | Tipo     | Requerido | Descripción                                             |
+|------------------|----------|-----------|---------------------------------------------------------|
+| `academicPeriod` | `string` | Sí        | Periodo para el cual se generan horarios                |
+| `timeSlotDuration`| `number`| No        | Duración de bloques en minutos. Default: `60`           |
+| `startHour`      | `string` | No        | Hora de inicio del día académico. Default: `"07:00"`    |
+| `endHour`        | `string` | No        | Hora de fin del día académico. Default: `"21:00"`       |
+| `timeoutSeconds` | `number` | No        | Tiempo límite en segundos. Default: `60`                |
+
+### 2.7 Entradas de Disponibilidad del Alumno
+
+| Campo        | Tipo       | Requerido | Validaciones                                       |
+|--------------|------------|-----------|----------------------------------------------------|
+| `studentId`  | `string`   | Sí        | ID del alumno autenticado (inferido del JWT)        |
+| `availability`| `object[]`| Sí        | Array de bloques `{dayOfWeek, startTime, endTime}` |
+
+---
+
+## 3. SALIDAS DEL SISTEMA
+
+### 3.1 Salida de Autenticación exitosa
+
+```json
+{
+  "access_token": "<JWT firmado>",
+  "role": "admin | student",
+  "userId": "<ObjectId>",
+  "expiresIn": 28800
+}
+```
+
+### 3.2 Salida de la API REST (formato general)
+
+**Éxito:**
+```json
+{
+  "success": true,
+  "data": { ... },
+  "message": "Descripción de la operación"
+}
+```
+
+**Error:**
+```json
+{
+  "success": false,
+  "error": "Código o tipo de error",
+  "message": "Descripción legible del error"
+}
+```
+
+### 3.3 Salida del Algoritmo CSP
+
+```json
+{
+  "status": "completed | infeasible | timeout",
+  "academicPeriod": "2026-1",
+  "generatedAt": "2026-04-27T14:30:00Z",
+  "stats": {
+    "totalCourses": 10,
+    "assignedCourses": 10,
+    "executionTimeMs": 1234,
+    "backtrackCount": 57
+  },
+  "schedules": [
+    {
+      "courseId": "<ObjectId>",
+      "courseName": "Cálculo I",
+      "teacherId": "<ObjectId>",
+      "classroomId": "<ObjectId>",
+      "dayOfWeek": "Monday",
+      "startTime": "08:00",
+      "endTime": "10:00"
+    }
+  ]
+}
+```
+
+**Estados posibles:**
+
+| Estado       | Significado                                                                  |
+|--------------|------------------------------------------------------------------------------|
+| `completed`  | El algoritmo encontró asignación válida para todos los cursos               |
+| `infeasible` | No existe solución que satisfaga todas las restricciones duras              |
+| `timeout`    | Se superó el límite de tiempo. `schedules` contiene asignación parcial     |
+
+### 3.4 Salida del Portal del Alumno (Horario Personal)
+
+```json
+{
+  "studentId": "<ObjectId>",
+  "academicPeriod": "2026-1",
+  "schedule": [
+    {
+      "courseName": "Cálculo I",
+      "teacherName": "Dr. García",
+      "classroom": "A-201",
+      "building": "Edificio A",
+      "dayOfWeek": "Monday",
+      "startTime": "08:00",
+      "endTime": "10:00"
+    }
+  ]
+}
+```
+
+---
+
+## 4. REGLAS DE NEGOCIO
+
+### 4.1 Reglas de Validación de Entidades
+
+**RN-01 — Unicidad de docente:**
+No pueden existir dos docentes con el mismo `code` o `email`. El sistema retorna HTTP 409 si se intenta crear un duplicado.
+
+**RN-02 — Unicidad de matrícula:**
+Un alumno no puede estar matriculado dos veces en el mismo curso y periodo académico. El sistema retorna HTTP 409 ante duplicado.
+
+**RN-03 — Integridad en eliminación:**
+Un docente con cursos activos en el periodo vigente no puede ser eliminado. Un curso con matrículas activas no puede ser eliminado. El sistema retorna HTTP 422 con descripción del conflicto.
+
+**RN-04 — Compatibilidad de tipo de aula:**
+Un curso de tipo `lab` solo puede asignarse a aulas de tipo `lab`. Un curso de tipo `computer_lab` solo puede asignarse a aulas de tipo `computer_lab`. Los cursos de tipo `lecture` y `seminar` pueden asignarse a aulas `lecture` o `seminar`.
+
+**RN-05 — Carga horaria del docente:**
+La suma total de horas semanales asignadas a un docente no puede superar su atributo `maxWeeklyHours`.
+
+### 4.2 Reglas del Algoritmo CSP
+
+**RN-06 — Dominio inicial de variables:**
+El dominio de cada variable (curso) es el conjunto de todas las combinaciones `(docente, aula, franja_horaria)` que:
+- El docente está disponible en esa franja.
+- La capacidad del aula es ≥ número de alumnos matriculados.
+- El tipo de aula es compatible con el tipo de curso.
+
+**RN-07 — Orden de procesamiento (MRV):**
+Las variables se seleccionan para asignación en orden de dominio más pequeño primero (Minimum Remaining Values). En caso de empate, se prioriza por grado de restricción más alto.
+
+**RN-08 — Orden de valores (LCV):**
+Los valores del dominio de cada variable se ordenan de menor a mayor impacto sobre los dominios de variables vecinas (Least Constraining Value), para maximizar la probabilidad de encontrar solución.
+
+**RN-09 — Propagación AC-3:**
+Antes del backtracking, se ejecuta AC-3 para eliminar del dominio de cada variable los valores que son inconsistentes con las restricciones binarias. Si algún dominio queda vacío, el sistema retorna `infeasible` sin iniciar el backtracking.
+
+**RN-10 — Persistencia condicional:**
+Los horarios solo se persisten en MongoDB si `status == "completed"`. Si el estado es `timeout`, los horarios parciales se guardan con una marca explícita `"partial": true`.
+
+---
+
+## 5. CASOS LÍMITE (EDGE CASES)
+
+### 5.1 Casos Límite en Generación de Horarios
+
+| ID     | Caso límite                                           | Comportamiento esperado del sistema                                       |
+|--------|-------------------------------------------------------|---------------------------------------------------------------------------|
+| CL-01  | No hay cursos con matrículas activas en el periodo   | Retorna `status: completed` con `schedules: []` y `totalCourses: 0`      |
+| CL-02  | No hay aulas disponibles en el sistema               | AC-3 detecta dominios vacíos. Retorna `status: infeasible`               |
+| CL-03  | Todos los docentes tienen disponibilidad 0 horas     | AC-3 detecta dominios vacíos. Retorna `status: infeasible`               |
+| CL-04  | Capacidad de todas las aulas < alumnos matriculados  | RC-05 elimina todas las opciones. Retorna `status: infeasible`           |
+| CL-05  | Dos cursos con el mismo docente y mismo horario      | RC-01 previene la asignación. Backtracking busca alternativa             |
+| CL-06  | Un alumno matriculado en 10 cursos simultáneos       | RC-03 gestiona todos los conflictos. Puede retornar `infeasible`         |
+| CL-07  | Periodo académico sin ningún curso registrado        | Retorna `status: completed` con `schedules: []`                          |
+| CL-08  | Algoritmo supera 60 segundos sin solución completa   | Retorna `status: timeout` con asignación parcial y `"partial": true`     |
+| CL-09  | Curso sin docente asignado incluido en generación    | RN-06 excluye el curso del dominio. Se registra en log de advertencias   |
+| CL-10  | Un docente asignado a 20 cursos en 1 día             | RC-01 + RN-05 reducen el dominio. Puede derivar en `infeasible`         |
+
+### 5.2 Casos Límite en Autenticación
+
+| ID     | Caso límite                              | Comportamiento esperado                                |
+|--------|------------------------------------------|--------------------------------------------------------|
+| CL-11  | Token JWT expirado                       | HTTP 401 con mensaje `"Token expirado"`               |
+| CL-12  | Token JWT con rol adulterado             | Firma inválida → HTTP 401 con mensaje `"Token inválido"` |
+| CL-13  | Alumno accede a ruta de admin            | HTTP 403 con mensaje `"Acceso no autorizado"`         |
+| CL-14  | Login con contraseña incorrecta          | HTTP 401. No se revela si el usuario existe o no      |
+| CL-15  | 5 intentos fallidos de login consecutivos | Rate limiter activa bloqueo temporal (15 minutos)     |
+
+### 5.3 Casos Límite en Gestión de Datos
+
+| ID     | Caso límite                                         | Comportamiento esperado                                    |
+|--------|-----------------------------------------------------|------------------------------------------------------------|
+| CL-16  | Crear docente con email duplicado                   | HTTP 409 con mensaje `"El email ya está registrado"`      |
+| CL-17  | Eliminar docente con cursos activos                 | HTTP 422 con detalle de los cursos en conflicto           |
+| CL-18  | Matricular alumno en curso con horario ya generado  | Matrícula permitida. Horario debe regenerarse manualmente |
+| CL-19  | Modificar disponibilidad docente con horario activo | Modificación permitida con advertencia de regeneración    |
+| CL-20  | Alumno consulta horario sin matrículas activas      | HTTP 200 con `schedule: []` y mensaje informativo         |
+
+---
+
+## 6. CONTRATOS DE LA API REST
+
+### 6.1 Módulo de Autenticación
+
+| Método | Endpoint          | Auth requerida | Descripción                        |
+|--------|-------------------|----------------|------------------------------------|
+| POST   | `/api/auth/login` | No             | Autenticación y emisión de JWT     |
+| POST   | `/api/auth/logout`| Sí             | Cierre de sesión (invalida token)  |
+
+### 6.2 Módulo de Docentes
+
+| Método | Endpoint                  | Rol requerido | Descripción                      |
+|--------|---------------------------|---------------|----------------------------------|
+| GET    | `/api/teachers`           | admin         | Listar todos los docentes        |
+| POST   | `/api/teachers`           | admin         | Crear nuevo docente              |
+| PUT    | `/api/teachers/:id`       | admin         | Actualizar docente               |
+| DELETE | `/api/teachers/:id`       | admin         | Eliminar docente (RN-03)         |
+
+### 6.3 Módulo de Cursos y Aulas
+
+| Método | Endpoint                  | Rol requerido | Descripción                      |
+|--------|---------------------------|---------------|----------------------------------|
+| GET    | `/api/courses`            | admin         | Listar todos los cursos          |
+| POST   | `/api/courses`            | admin         | Crear nuevo curso                |
+| PUT    | `/api/courses/:id`        | admin         | Actualizar curso                 |
+| DELETE | `/api/courses/:id`        | admin         | Eliminar curso (RN-03)           |
+| GET    | `/api/classrooms`         | admin         | Listar todas las aulas           |
+| POST   | `/api/classrooms`         | admin         | Crear nueva aula                 |
+| PUT    | `/api/classrooms/:id`     | admin         | Actualizar aula                  |
+
+### 6.4 Módulo de Horarios (CSP)
+
+| Método | Endpoint                        | Rol requerido | Descripción                          |
+|--------|---------------------------------|---------------|--------------------------------------|
+| POST   | `/api/schedules/generate`       | admin         | Ejecutar generación CSP              |
+| GET    | `/api/schedules/:period`        | admin         | Consultar horarios de un periodo     |
+| DELETE | `/api/schedules/:period`        | admin         | Limpiar horarios de un periodo       |
+
+### 6.5 Portal del Alumno
+
+| Método | Endpoint                         | Rol requerido | Descripción                           |
+|--------|----------------------------------|---------------|---------------------------------------|
+| GET    | `/api/student/schedule`          | student       | Horario personal del alumno           |
+| GET    | `/api/student/enrollments`       | student       | Matrículas activas del alumno         |
+| PUT    | `/api/student/availability`      | student       | Actualizar disponibilidad horaria     |
+
+---
+
+## 7. MODELO FORMAL CSP
+
+El problema se define como la tupla **CSP = (X, D, C):**
+
+```
+X = {x₁, x₂, ..., xₙ}     — Variables: cursos con matrículas activas en el periodo
+D = {D₁, D₂, ..., Dₙ}     — Dominios: asignaciones (docente, aula, franja) válidas por curso
+C = {RC-01, RC-02, ..., RC-07}  — Restricciones duras definidas en constitution.md
+```
+
+**Definición formal de franja horaria:**
+```
+FranjaHoraria = (dayOfWeek, startTime, endTime)
+donde dayOfWeek ∈ {Mon, Tue, Wed, Thu, Fri}
+y startTime, endTime ∈ {07:00, 07:30, 08:00, ..., 21:00} (intervalos de 30 min)
+y startTime < endTime
+```
+
+**Condición de solución:**
+```
+S es solución válida ⟺
+  ∀ xᵢ ∈ X: xᵢ tiene exactamente una asignación en S
+  ∧ ∀ RC ∈ C: RC no es violada por ningún par de asignaciones en S
+```
+
+---
+
+## 8. MATRIZ DE TRAZABILIDAD
+
+| Caso de Uso | Regla de Negocio | Restricción CSP | Test asociado          |
+|-------------|------------------|-----------------|------------------------|
+| CU-01       | —                | —               | `auth.test.js`         |
+| CU-03       | RN-01, RN-03     | —               | —                      |
+| CU-04       | RN-04, RN-05     | RC-05, RC-07    | —                      |
+| CU-05       | RN-02, RN-03     | RC-03           | —                      |
+| CU-06       | RN-06 a RN-10    | RC-01 a RC-07   | `solver.test.js`, `constraints.test.js`, `heuristics.test.js`, `ac3.test.js` |
+| CU-07       | —                | RC-01, RC-02, RC-03 | `solver.test.js`   |
+| CU-08       | —                | RC-04           | `timeSlots.test.js`    |
+
+---
+
+## 9. HISTORIAL DE VERSIONES
+
+| Versión | Fecha      | Cambio                                          | Autor                           |
+|---------|------------|-------------------------------------------------|---------------------------------|
+| 1.0     | 2026-04-01 | Definición inicial de casos de uso y contratos  | Sanchez Ramos / Calderon Aliaga |
+| 1.1     | 2026-04-15 | Adición de casos límite y modelo formal CSP     | Calderon Aliaga                 |
+| 1.2     | 2026-04-27 | Revisión de reglas de negocio y matriz de trazabilidad | Sanchez Ramos            |
+
+---
+
+*Universidad Continental — Ingeniería de Sistemas e Informática — Taller de Proyectos 2 — 2026*
