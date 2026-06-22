@@ -471,6 +471,20 @@ Ver [`docs/GitFlow_Guide.md`](docs/GitFlow_Guide.md) para la guía completa.
 | [`Metricas_Agiles.md`](docs/Metricas_Agiles.md) | Burndown, Burnup, Velocidad, Gráfico de Control |
 | [`GitFlow_Guide.md`](docs/GitFlow_Guide.md) | Estrategia de ramas y commits semánticos |
 
+### Documentación Fase Final / Consolidado 2
+
+| Documento | Descripción |
+|---|---|
+| [`01 - Análisis de Soluciones Similares.md`](./01%20-%20Análisis%20de%20Soluciones%20Similares.md) | Búsqueda de información y análisis de herramientas similares |
+| [`02 - Evaluación de Calidad del Software según ISO-IEC 25010.md`](./02%20-%20Evaluación%20de%20Calidad%20del%20Software%20según%20ISO-IEC%2025010.md) | Análisis técnico bajo estándar de calidad ISO/IEC 25010 |
+| [`03 - Aplicación de OWASP Top 10 en SGOHA.md`](./03%20-%20Aplicación%20de%20OWASP%20Top%2010%20en%20SGOHA.md) | Evaluación para vulnerabilidades críticas web |
+| [`04 - Green Software y Sostenibilidad.md`](./04%20-%20Green%20Software%20y%20Sostenibilidad.md) | Criterios de sostenibilidad e impacto ambiental |
+| [`05 - Accesibilidad Web según WCAG 2.1.md`](./05%20-%20Accesibilidad%20Web%20según%20WCAG%202.1.md) | Inclusión e interfaces accesibles |
+| [`06 - Evaluación del Impacto de la Solución.md`](./06%20-%20Evaluación%20del%20Impacto%20de%20la%20Solución.md) | Impacto económico, social y tecnológico |
+| [`07 - Costo del Ciclo de Vida del Software.md`](./07%20-%20Costo%20del%20Ciclo%20de%20Vida%20del%20Software.md) | Análisis de costos (desarrollo y mantenimiento) |
+| [`08 - Evidencias del Prototipo.md`](./08%20-%20Evidencias%20del%20Prototipo.md) | Capturas reales y sustentación de pruebas TDD |
+| [`09 - Informe de Cierre del Proyecto.md`](./09%20-%20Informe%20de%20Cierre%20del%20Proyecto.md) | Reporte final, objetivos alcanzados y conclusiones |
+
 ---
 
 ## 🌐 Despliegue en Producción
