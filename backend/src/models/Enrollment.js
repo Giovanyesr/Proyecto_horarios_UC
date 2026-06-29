@@ -10,12 +10,22 @@ const enrollmentSchema = new mongoose.Schema({
 
 enrollmentSchema.index({ student_id: 1, course_id: 1, academic_period: 1 }, { unique: true })
 
+function splitPopulated(ret, idField, docField) {
+  const v = ret[idField]
+  if (v && typeof v === 'object' && !(v instanceof mongoose.Types.ObjectId)) {
+    ret[docField] = v
+    ret[idField] = v.id ?? v._id?.toString() ?? String(v)
+  } else if (v != null) {
+    ret[idField] = v.toString()
+  }
+}
+
 enrollmentSchema.set('toJSON', {
   virtuals: true,
   transform: (doc, ret) => {
     ret.id = ret._id.toString()
-    ret.student_id = ret.student_id?.toString?.() ?? ret.student_id
-    ret.course_id  = ret.course_id?.toString?.()  ?? ret.course_id
+    splitPopulated(ret, 'student_id', 'student')
+    splitPopulated(ret, 'course_id', 'course')
     delete ret._id
     return ret
   },

@@ -291,7 +291,7 @@ export default function SchedulesPage() {
               <p className="text-xs text-slate-400 mt-1">Genera tu primer horario</p>
             </div>
           ) : (
-            <div className="divide-y overflow-y-auto max-h-[360px]" style={{ divideColor: '#f1f5f9' }}>
+            <div className="divide-y divide-slate-100 overflow-y-auto max-h-[360px]">
               {runs.map(run => {
                 const isActive = activeRun?.id === run.id
                 return (

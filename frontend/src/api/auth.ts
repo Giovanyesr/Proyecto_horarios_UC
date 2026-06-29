@@ -52,7 +52,8 @@ export const authApi = {
 
   me: () => client.get<UserRecord>('/auth/me').then(r => r.data),
 
-  listUsers: () => client.get<UserRecord[]>('/auth/users').then(r => r.data),
+  listUsers: () => client.get<UserRecord[] | { items: UserRecord[] }>('/auth/users', { params: { size: 100 } })
+    .then(r => Array.isArray(r.data) ? r.data : r.data.items ?? []),
 
   createUser: (data: UserCreatePayload) =>
     client.post<UserRecord>('/auth/users', data).then(r => r.data),
@@ -61,7 +62,8 @@ export const authApi = {
     client.delete(`/auth/users/${id}`),
 
   listAllowedEmails: () =>
-    client.get<AllowedEmailRecord[]>('/auth/allowed-emails').then(r => r.data),
+    client.get<AllowedEmailRecord[] | { items: AllowedEmailRecord[] }>('/auth/allowed-emails', { params: { size: 100 } })
+      .then(r => Array.isArray(r.data) ? r.data : r.data.items ?? []),
 
   createAllowedEmail: (data: AllowedEmailCreate) =>
     client.post<AllowedEmailRecord>('/auth/allowed-emails', data).then(r => r.data),

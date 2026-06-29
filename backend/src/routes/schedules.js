@@ -12,6 +12,17 @@ router.post('/generate', verifyToken, requireAdmin, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+// GET /api/v1/schedules/active?academic_period=YYYY-N
+// Returns the latest completed run for the period, generating one on-demand if none exists.
+router.get('/active', verifyToken, async (req, res, next) => {
+  try {
+    const { academic_period } = req.query
+    if (!academic_period) return res.status(400).json({ detail: 'academic_period es requerido' })
+    const run = await svc.ensureSchedule(academic_period, {})
+    res.json(run)
+  } catch (err) { next(err) }
+})
+
 // GET /api/v1/schedules/runs
 router.get('/runs', verifyToken, async (req, res, next) => {
   try {

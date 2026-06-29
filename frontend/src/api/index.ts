@@ -13,7 +13,8 @@ export const studentsApi = {
   delete: (id: string) => client.delete<Student>(`/students/${id}`).then(r => r.data),
   getAvailability: (id: string) => client.get<AvailabilitySlot[]>(`/students/${id}/availability`).then(r => r.data),
   setAvailability: (id: string, slots: AvailabilitySlot[]) => client.put<AvailabilitySlot[]>(`/students/${id}/availability`, { slots }).then(r => r.data),
-  getEnrollments: (id: string) => client.get<Enrollment[]>(`/students/${id}/enrollments`).then(r => r.data),
+  getEnrollments: (id: string) => client.get<Enrollment[] | { items: Enrollment[] }>(`/students/${id}/enrollments`, { params: { size: 100 } })
+    .then(r => Array.isArray(r.data) ? r.data : r.data.items ?? []),
   setAcademic: (id: string, data: { max_credits: number; academic_status: string; mandatory_course_id?: string | null }) =>
     client.patch<Student>(`/students/${id}/academic`, data).then(r => r.data),
 }
@@ -61,9 +62,13 @@ export const enrollmentsApi = {
 }
 
 // Schedules
+const SOLVER_TIMEOUT_MS = 180_000  // solver caps at 60s; allow headroom for DB writes + network
+
 export const schedulesApi = {
   generate: (academic_period: string, config: SolverConfig) =>
-    client.post<ScheduleRun>('/schedules/generate', { academic_period, config }).then(r => r.data),
+    client.post<ScheduleRun>('/schedules/generate', { academic_period, config }, { timeout: SOLVER_TIMEOUT_MS }).then(r => r.data),
+  ensureActive: (academic_period: string) =>
+    client.get<ScheduleRun>('/schedules/active', { params: { academic_period }, timeout: SOLVER_TIMEOUT_MS }).then(r => r.data),
   listRuns: (params?: object) => client.get<ScheduleRun[]>('/schedules/runs', { params }).then(r => r.data),
   getRun: (runId: string) => client.get<ScheduleRun>(`/schedules/runs/${runId}`).then(r => r.data),
   getSections: (runId: string, params?: object) =>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { ScheduledSection } from '../../types'
 import { getCourseColor, DAY_NAMES } from '../../utils/colorPalette'
 
@@ -157,6 +157,18 @@ function CalendarEvent({ section }: { section: ScheduledSection }) {
 export function WeeklyCalendar({ sections, compact = false }: Props) {
   const totalH = HOURS.length * 2 * ROW_H
 
+  // Group sections by day + dedupe legend in a single pass, memoized.
+  const { byDay, uniqueByCourse } = useMemo(() => {
+    const byDay: Record<number, ScheduledSection[]> = {}
+    const uniqueByCourse = new Map<string, ScheduledSection>()
+    for (const s of sections) {
+      if (!byDay[s.day_of_week]) byDay[s.day_of_week] = []
+      byDay[s.day_of_week].push(s)
+      if (!uniqueByCourse.has(s.course_id)) uniqueByCourse.set(s.course_id, s)
+    }
+    return { byDay, uniqueByCourse }
+  }, [sections])
+
   if (sections.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-slate-400">
@@ -168,13 +180,6 @@ export function WeeklyCalendar({ sections, compact = false }: Props) {
       </div>
     )
   }
-
-  // Group sections by day
-  const byDay: Record<number, ScheduledSection[]> = {}
-  sections.forEach(s => {
-    if (!byDay[s.day_of_week]) byDay[s.day_of_week] = []
-    byDay[s.day_of_week].push(s)
-  })
 
   const activeDays = Object.keys(byDay).map(Number).sort()
   const showDays = compact ? activeDays : [0, 1, 2, 3, 4, 5]
@@ -242,7 +247,7 @@ export function WeeklyCalendar({ sections, compact = false }: Props) {
         {/* Legend */}
         {sections.length > 0 && (
           <div className="flex flex-wrap gap-2 px-2 pt-4 pb-2 border-t mt-1" style={{ borderColor: '#f1f0fb' }}>
-            {[...new Map(sections.map(s => [s.course_id, s])).values()].map(s => {
+            {[...uniqueByCourse.values()].map(s => {
               const color = getCourseColor(s.course?.course_code ?? String(s.course_id))
               return (
                 <div key={s.course_id} className="flex items-center gap-1.5 text-xs rounded-full px-2.5 py-1"

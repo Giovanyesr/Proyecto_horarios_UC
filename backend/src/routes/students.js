@@ -23,7 +23,7 @@ router.get('/', verifyToken, async (req, res, next) => {
     if (is_active !== undefined) filter.is_active = is_active === 'true'
 
     const [items, total] = await Promise.all([
-      Student.findOne ? Student.find(filter).skip((page - 1) * size).limit(size).sort({ created_at: -1 }) : [],
+      Student.find(filter).skip((page - 1) * size).limit(size).sort({ created_at: -1 }),
       Student.countDocuments(filter),
     ])
     res.json({ items, ...paginate(total, page, size) })
@@ -90,11 +90,17 @@ router.patch('/:id/academic', verifyToken, requireAdmin, async (req, res, next) 
 // GET /api/v1/students/:id/enrollments
 router.get('/:id/enrollments', verifyToken, async (req, res, next) => {
   try {
+    const page = Math.max(1, parseInt(req.query.page) || 1)
+    const size = Math.min(100, Math.max(1, parseInt(req.query.size) || 20))
     const student = await Student.findById(req.params.id)
     if (!student) return res.status(404).json({ detail: 'Estudiante no encontrado' })
-    const enrollments = await Enrollment.find({ student_id: req.params.id })
-      .populate('course_id').limit(200)
-    res.json(enrollments)
+    const filter = { student_id: req.params.id }
+    const [items, total] = await Promise.all([
+      Enrollment.find(filter).populate('course_id')
+        .skip((page - 1) * size).limit(size).sort({ enrolled_at: -1 }),
+      Enrollment.countDocuments(filter),
+    ])
+    res.json({ items, ...paginate(total, page, size) })
   } catch (err) { next(err) }
 })
 

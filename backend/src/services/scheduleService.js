@@ -76,6 +76,19 @@ async function getRuns({ academicPeriod, status } = {}) {
   return ScheduleRun.find(filter).sort({ created_at: -1 })
 }
 
+async function getLatestCompletedRun(academicPeriod) {
+  return ScheduleRun.findOne({ academic_period: academicPeriod, status: 'completed' })
+    .sort({ created_at: -1 })
+}
+
+async function ensureSchedule(academicPeriod, config = {}) {
+  const completed = await getLatestCompletedRun(academicPeriod)
+  if (completed) return completed
+  const running = await ScheduleRun.findOne({ academic_period: academicPeriod, status: 'running' })
+  if (running) return running
+  return generateSchedule(academicPeriod, config)
+}
+
 async function getSections(runId, { courseId, teacherId, classroomId } = {}) {
   const filter = { run_id: runId }
   if (courseId)    filter.course_id    = courseId
@@ -105,4 +118,4 @@ async function getStudentSchedule(runId, studentId) {
     .populate('classroom_id')
 }
 
-module.exports = { generateSchedule, getRun, getRuns, getSections, getStudentSchedule }
+module.exports = { generateSchedule, getRun, getRuns, getLatestCompletedRun, ensureSchedule, getSections, getStudentSchedule }

@@ -54,6 +54,7 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let cancelled = false
     async function load() {
       try {
         const [enrollRes, runsRes, studentRes] = await Promise.all([
@@ -63,9 +64,11 @@ export default function StudentDashboard() {
           schedulesApi.listRuns({ size: 1 }),
           studentId ? studentsApi.get(studentId) : Promise.resolve(null),
         ])
-        const active = (enrollRes.items ?? []).filter((e: any) => e.status === 'enrolled')
-        const credits = active.reduce((sum: number, e: any) => sum + (e.course?.credits ?? 0), 0)
-        const latestRun = Array.isArray(runsRes) ? runsRes[0] : (runsRes as any).items?.[0] ?? null
+        if (cancelled) return
+        const active = ((enrollRes as { items?: unknown[] }).items ?? []).filter((e): e is { status: string; course?: { credits?: number } } =>
+          typeof e === 'object' && e !== null && (e as { status: unknown }).status === 'enrolled')
+        const credits = active.reduce((sum, e) => sum + (e.course?.credits ?? 0), 0)
+        const latestRun = Array.isArray(runsRes) ? runsRes[0] : (runsRes as { items?: { academic_period?: string; status?: string }[] }).items?.[0] ?? null
         if (studentRes) setStudent(studentRes)
         setStats({
           enrolled: active.length,
@@ -75,10 +78,11 @@ export default function StudentDashboard() {
           latestRun: latestRun?.academic_period ?? null,
           latestStatus: latestRun?.status ?? null,
         })
-      } catch { /* silent */ }
-      finally { setLoading(false) }
+      } catch { /* silent — UI degrades to defaults */ }
+      finally { if (!cancelled) setLoading(false) }
     }
     load()
+    return () => { cancelled = true }
   }, [studentId])
 
   const creditPct = Math.min((stats.credits / stats.maxCredits) * 100, 100)

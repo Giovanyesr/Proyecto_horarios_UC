@@ -69,6 +69,19 @@ export default function StudentProfilePage() {
     transition: 'border-color 0.15s',
   }
 
+  // Wraps RHF's register so the visual focus/blur styling is preserved
+  // alongside RHF's own onBlur (used for touched/validation state).
+  const withFocusBorder = (reg: ReturnType<typeof register>) => ({
+    ...reg,
+    onFocus: (e: React.FocusEvent<HTMLInputElement>) => {
+      e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)'
+    },
+    onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
+      reg.onBlur(e)
+      e.currentTarget.style.borderColor = 'var(--sp-input-brd)'
+    },
+  })
+
   return (
     <div className="p-6 xl:p-8 space-y-5 animate-fadeIn">
 
@@ -190,25 +203,19 @@ export default function StudentProfilePage() {
                       <div>
                         <label className="block text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--sp-t3)' }}>Nombre *</label>
                         <input style={inputStyle}
-                          onFocus={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)')}
-                          onBlur={e => (e.currentTarget.style.borderColor = 'var(--sp-input-brd)')}
-                          {...register('first_name', { required: 'Requerido', minLength: { value: 2, message: 'Min. 2 chars' } })} />
+                          {...withFocusBorder(register('first_name', { required: 'Requerido', minLength: { value: 2, message: 'Min. 2 chars' } }))} />
                         {errors.first_name && <p className="text-xs mt-1 text-rose-400">{errors.first_name.message}</p>}
                       </div>
                       <div>
                         <label className="block text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--sp-t3)' }}>Apellido *</label>
                         <input style={inputStyle}
-                          onFocus={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)')}
-                          onBlur={e => (e.currentTarget.style.borderColor = 'var(--sp-input-brd)')}
-                          {...register('last_name', { required: 'Requerido', minLength: { value: 2, message: 'Min. 2 chars' } })} />
+                          {...withFocusBorder(register('last_name', { required: 'Requerido', minLength: { value: 2, message: 'Min. 2 chars' } }))} />
                         {errors.last_name && <p className="text-xs mt-1 text-rose-400">{errors.last_name.message}</p>}
                       </div>
                       <div className="col-span-2">
                         <label className="block text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--sp-t3)' }}>Correo *</label>
                         <input type="email" style={inputStyle}
-                          onFocus={e => (e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)')}
-                          onBlur={e => (e.currentTarget.style.borderColor = 'var(--sp-input-brd)')}
-                          {...register('email', { required: 'Requerido', pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Correo inválido' } })} />
+                          {...withFocusBorder(register('email', { required: 'Requerido', pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Correo inválido' } }))} />
                         {errors.email && <p className="text-xs mt-1 text-rose-400">{errors.email.message}</p>}
                       </div>
                     </div>

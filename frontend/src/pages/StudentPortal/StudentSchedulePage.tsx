@@ -10,6 +10,11 @@ const T1 = 'var(--sp-t1)'
 const T2 = 'var(--sp-t2)'
 const T3 = 'var(--sp-t3)'
 
+function currentPeriod() {
+  const now = new Date()
+  return `${now.getFullYear()}-${now.getMonth() < 7 ? 1 : 2}`
+}
+
 export default function StudentSchedulePage() {
   const { studentId } = useAuthStore()
   const [runs, setRuns] = useState<ScheduleRun[]>([])
@@ -17,19 +22,42 @@ export default function StudentSchedulePage() {
   const [sections, setSections] = useState<ScheduledSection[]>([])
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [loading, setLoading] = useState(true)
+  const [generating, setGenerating] = useState(false)
   const [loadingSections, setLoadingSections] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    schedulesApi.listRuns()
-      .then(data => {
-        const completed = (Array.isArray(data) ? data : (data as any).items ?? [])
-          .filter((r: ScheduleRun) => r.status === 'completed')
+    let cancelled = false
+    const period = currentPeriod()
+
+    ;(async () => {
+      try {
+        const data = await schedulesApi.listRuns()
+        const all = (Array.isArray(data) ? data : (data as any).items ?? []) as ScheduleRun[]
+        let completed = all.filter(r => r.status === 'completed')
+
+        if (!completed.some(r => r.academic_period === period)) {
+          setGenerating(true)
+          try {
+            const run = await schedulesApi.ensureActive(period)
+            if (run.status === 'completed') completed = [run, ...completed.filter(r => r.id !== run.id)]
+            else if (run.status === 'failed') setError(run.error_message || 'No se pudo generar el horario automáticamente')
+          } finally {
+            if (!cancelled) setGenerating(false)
+          }
+        }
+
+        if (cancelled) return
         setRuns(completed)
         if (completed.length > 0) setSelectedRun(completed[0].id)
-      })
-      .catch(() => setError('No se pudo cargar los horarios'))
-      .finally(() => setLoading(false))
+      } catch {
+        if (!cancelled) setError('No se pudo cargar los horarios')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+
+    return () => { cancelled = true }
   }, [])
 
   useEffect(() => {
@@ -98,7 +126,16 @@ export default function StudentSchedulePage() {
         </div>
       </div>
 
-      {loading && <div className="flex justify-center py-16"><Spinner size="lg" /></div>}
+      {loading && (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <Spinner size="lg" />
+          {generating && (
+            <p className="text-sm font-semibold" style={{ color: T2 }}>
+              Generando tu horario por primera vez… esto puede tardar unos segundos
+            </p>
+          )}
+        </div>
+      )}
 
       {!loading && runs.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 rounded-2xl" style={CARD}>

@@ -12,13 +12,13 @@ const T2 = 'var(--sp-t2)'
 const T3 = 'var(--sp-t3)'
 
 const STATUS_LABEL: Record<string, string> = {
-  enrolled: 'Matriculado', waitlist: 'En espera', withdrawn: 'Retirado', completed: 'Completado'
+  enrolled: 'Matriculado', dropped: 'Retirado', completed: 'Completado', failed: 'Reprobado'
 }
 const STATUS_COLOR: Record<string, { color: string; bg: string }> = {
   enrolled:  { color: '#34d399', bg: 'rgba(52,211,153,0.12)'  },
-  waitlist:  { color: '#fbbf24', bg: 'rgba(251,191,36,0.12)'  },
-  withdrawn: { color: T2,       bg: 'rgba(255,255,255,0.06)'  },
+  dropped:   { color: T2,       bg: 'rgba(255,255,255,0.06)'  },
   completed: { color: '#60a5fa', bg: 'rgba(96,165,250,0.12)'  },
+  failed:    { color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
 }
 
 function currentPeriod() {
@@ -94,7 +94,7 @@ export default function StudentEnrollmentsPage() {
     if (!confirm(`¿Retirarte de ${(enrollment as any).course?.name ?? 'este curso'}?`)) return
     setWithdrawing(enrollment.id)
     try {
-      await enrollmentsApi.updateStatus(enrollment.id, 'withdrawn')
+      await enrollmentsApi.updateStatus(enrollment.id, 'dropped')
       addToast('info', 'Retiro registrado')
       await loadEnrollments()
     } catch (err: any) {
@@ -229,7 +229,7 @@ export default function StudentEnrollmentsPage() {
           {enrollments.map(enrollment => {
             const course = (enrollment as any).course as Course | undefined
             const isMandatory = course?.id === mandatoryId
-            const sc = STATUS_COLOR[enrollment.status] ?? STATUS_COLOR.withdrawn
+            const sc = STATUS_COLOR[enrollment.status] ?? STATUS_COLOR.dropped
             return (
               <div key={enrollment.id}
                 className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-150"

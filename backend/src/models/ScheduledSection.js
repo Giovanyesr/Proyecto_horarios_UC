@@ -11,14 +11,24 @@ const scheduledSectionSchema = new mongoose.Schema({
   section_number: { type: Number, default: 1 },
 }, { timestamps: false, versionKey: false })
 
+function splitPopulated(ret, idField, docField) {
+  const v = ret[idField]
+  if (v && typeof v === 'object' && !(v instanceof mongoose.Types.ObjectId)) {
+    ret[docField] = v
+    ret[idField] = v.id ?? v._id?.toString() ?? String(v)
+  } else if (v != null) {
+    ret[idField] = v.toString()
+  }
+}
+
 scheduledSectionSchema.set('toJSON', {
   virtuals: true,
   transform: (doc, ret) => {
     ret.id = ret._id.toString()
-    ret.run_id       = ret.run_id?.toString?.()       ?? ret.run_id
-    ret.course_id    = ret.course_id?.toString?.()    ?? ret.course_id
-    ret.teacher_id   = ret.teacher_id?.toString?.()   ?? ret.teacher_id
-    ret.classroom_id = ret.classroom_id?.toString?.() ?? ret.classroom_id
+    splitPopulated(ret, 'run_id',       'run')
+    splitPopulated(ret, 'course_id',    'course')
+    splitPopulated(ret, 'teacher_id',   'teacher')
+    splitPopulated(ret, 'classroom_id', 'classroom')
     delete ret._id
     return ret
   },

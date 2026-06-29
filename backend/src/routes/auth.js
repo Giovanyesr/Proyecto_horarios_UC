@@ -119,8 +119,14 @@ router.get('/me', verifyToken, (req, res) => res.json(req.user))
 // GET /api/v1/auth/users
 router.get('/users', verifyToken, requireAdmin, async (req, res, next) => {
   try {
-    const users = await User.find().sort({ created_at: -1 })
-    res.json(users)
+    const page = Math.max(1, parseInt(req.query.page) || 1)
+    const size = Math.min(100, Math.max(1, parseInt(req.query.size) || 50))
+    const [items, total] = await Promise.all([
+      User.find().skip((page - 1) * size).limit(size).sort({ created_at: -1 }),
+      User.countDocuments(),
+    ])
+    const pages = total === 0 ? 1 : Math.ceil(total / size)
+    res.json({ items, total, page, size, pages })
   } catch (err) { next(err) }
 })
 
@@ -180,8 +186,14 @@ router.delete('/lockout/:username', verifyToken, requireAdmin, async (req, res, 
 // GET /api/v1/auth/allowed-emails
 router.get('/allowed-emails', verifyToken, requireAdmin, async (req, res, next) => {
   try {
-    const emails = await AllowedEmail.find().sort({ created_at: -1 })
-    res.json(emails)
+    const page = Math.max(1, parseInt(req.query.page) || 1)
+    const size = Math.min(100, Math.max(1, parseInt(req.query.size) || 50))
+    const [items, total] = await Promise.all([
+      AllowedEmail.find().skip((page - 1) * size).limit(size).sort({ created_at: -1 }),
+      AllowedEmail.countDocuments(),
+    ])
+    const pages = total === 0 ? 1 : Math.ceil(total / size)
+    res.json({ items, total, page, size, pages })
   } catch (err) { next(err) }
 })
 

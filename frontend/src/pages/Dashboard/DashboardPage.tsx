@@ -84,6 +84,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let cancelled = false
     Promise.all([
       studentsApi.list({ size: 1 }),
       teachersApi.list({ size: 1 }),
@@ -91,9 +92,15 @@ export default function DashboardPage() {
       classroomsApi.list({ size: 1 }),
       schedulesApi.listRuns(),
     ]).then(([s, t, c, cl, r]) => {
+      if (cancelled) return
       setStats({ students: s.total, teachers: t.total, courses: c.total, classrooms: cl.total })
-      setRuns(r.slice(0, 5))
-    }).finally(() => setLoading(false))
+      const runsArr = Array.isArray(r) ? r : []
+      setRuns(runsArr.slice(0, 5))
+    }).catch(() => {
+      if (cancelled) return
+      setStats({ students: 0, teachers: 0, courses: 0, classrooms: 0 })
+    }).finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [])
 
   if (loading) return (

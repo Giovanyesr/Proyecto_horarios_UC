@@ -19,8 +19,14 @@ export default function EnrollmentsPage() {
   const { addToast } = useUIStore()
 
   useEffect(() => {
-    studentsApi.list({ size: 100, is_active: true }).then(r => setStudents(r.items))
-    coursesApi.list({ size: 100, is_active: true }).then(r => setCourses(r.items))
+    let cancelled = false
+    studentsApi.list({ size: 100, is_active: true })
+      .then(r => { if (!cancelled) setStudents(r.items ?? []) })
+      .catch(() => { if (!cancelled) setStudents([]) })
+    coursesApi.list({ size: 100, is_active: true })
+      .then(r => { if (!cancelled) setCourses(r.items ?? []) })
+      .catch(() => { if (!cancelled) setCourses([]) })
+    return () => { cancelled = true }
   }, [])
 
   useEffect(() => {
@@ -64,7 +70,7 @@ export default function EnrollmentsPage() {
 
   const handleWithdraw = async (enrollmentId: string) => {
     try {
-      await enrollmentsApi.updateStatus(enrollmentId, 'withdrawn')
+      await enrollmentsApi.updateStatus(enrollmentId, 'dropped')
       addToast('info', 'Retiro registrado')
       const [e, s] = await Promise.all([
         enrollmentsApi.list({ student_id: selectedStudent, academic_period: period, size: 50 }),
@@ -156,8 +162,8 @@ export default function EnrollmentsPage() {
                     <span className="ml-2 text-gray-500">({e.course?.credits} cr.)</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={e.status === 'enrolled' ? 'green' : e.status === 'withdrawn' ? 'gray' : 'yellow'}>
-                      {e.status === 'enrolled' ? 'Activo' : e.status === 'withdrawn' ? 'Retirado' : e.status}
+                    <Badge variant={e.status === 'enrolled' ? 'green' : e.status === 'dropped' ? 'gray' : 'yellow'}>
+                      {e.status === 'enrolled' ? 'Activo' : e.status === 'dropped' ? 'Retirado' : e.status}
                     </Badge>
                     {e.status === 'enrolled' && (
                       <button className="text-xs text-red-500 hover:underline" onClick={() => handleWithdraw(e.id)}>Retirar</button>

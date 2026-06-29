@@ -1,24 +1,22 @@
-const { isConsistent } = require('./constraints')
+const { consistentPair } = require('./constraints')
 
-function revise(xi, xj, problem, currentAssignments) {
+function revise(xi, xj, problem) {
+  const di = problem.domains.get(xi) ?? []
+  const dj = problem.domains.get(xj) ?? []
+  if (dj.length === 0) return false
+  const shared = problem.teacherSharedStudents.get(`${xi},${xj}`)
+
+  const filtered = []
   let revised = false
-  const toRemove = []
-  for (const x of problem.domains.get(xi)) {
-    const hasSupport = (problem.domains.get(xj) ?? []).some(y => {
-      const temp = new Map(currentAssignments)
-      temp.set(xj, y)
-      return isConsistent(xi, x, temp, problem)
-    })
-    if (!hasSupport) {
-      toRemove.push(x)
-      revised = true
+  for (const x of di) {
+    let supported = false
+    for (const y of dj) {
+      if (consistentPair(x, y, shared)) { supported = true; break }
     }
+    if (supported) filtered.push(x)
+    else revised = true
   }
-  const domain = problem.domains.get(xi)
-  for (const val of toRemove) {
-    const idx = domain.indexOf(val)
-    if (idx !== -1) domain.splice(idx, 1)
-  }
+  if (revised) problem.domains.set(xi, filtered)
   return revised
 }
 
@@ -29,10 +27,11 @@ function ac3(problem) {
       queue.push([xi, xj])
     }
   }
-  const currentAssignments = new Map()
-  while (queue.length > 0) {
-    const [xi, xj] = queue.shift()
-    if (revise(xi, xj, problem, currentAssignments)) {
+  // Pointer-based dequeue: avoids O(n) Array.shift on each iteration.
+  let head = 0
+  while (head < queue.length) {
+    const [xi, xj] = queue[head++]
+    if (revise(xi, xj, problem)) {
       if ((problem.domains.get(xi) ?? []).length === 0) return false
       for (const xk of (problem.neighbors.get(xi) ?? [])) {
         if (xk !== xj) queue.push([xk, xi])

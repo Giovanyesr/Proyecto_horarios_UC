@@ -1,4 +1,4 @@
-const { isConsistent }          = require('./constraints')
+const { isConsistent, consistentPair }        = require('./constraints')
 const { selectUnassignedMRV, orderDomainLCV } = require('./heuristics')
 const { ac3 }                   = require('./ac3')
 
@@ -29,15 +29,21 @@ function backtrack(assignment, problem, stats, useMrv, useLcv, useForwardCheckin
       if (useForwardChecking) {
         for (const neighborId of (problem.neighbors.get(varId) ?? [])) {
           if (assignment.has(neighborId)) continue
-          pruned.set(neighborId, [])
           const neighborDomain = problem.domains.get(neighborId)
+          if (!neighborDomain) continue
+          const shared = problem.teacherSharedStudents.get(`${neighborId},${varId}`)
+          let removed = null
           for (let i = neighborDomain.length - 1; i >= 0; i--) {
-            const neighborVal = neighborDomain[i]
-            if (!isConsistent(neighborId, neighborVal, assignment, problem)) {
+            // Pairwise check against the just-assigned varId only — other
+            // unassigned neighbors don't constrain neighborVal yet, and
+            // already-assigned ones were checked when they were placed.
+            if (!consistentPair(neighborDomain[i], value, shared)) {
+              if (removed === null) removed = []
+              removed.push(neighborDomain[i])
               neighborDomain.splice(i, 1)
-              pruned.get(neighborId).push(neighborVal)
             }
           }
+          if (removed !== null) pruned.set(neighborId, removed)
           if (neighborDomain.length === 0) {
             feasible = false
             break

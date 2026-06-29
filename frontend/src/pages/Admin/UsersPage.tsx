@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { authApi, type UserRecord, type UserCreatePayload } from '../../api/auth'
 import { studentsApi } from '../../api'
 import type { Student } from '../../types'
@@ -25,7 +25,7 @@ export default function UsersPage() {
     try {
       const [u, s] = await Promise.all([
         authApi.listUsers(),
-        studentsApi.list({ limit: 200 }),
+        studentsApi.list({ size: 200 }),
       ])
       setUsers(u)
       setStudents((s as any).items ?? s ?? [])
@@ -68,9 +68,10 @@ export default function UsersPage() {
     }
   }
 
+  const studentById = useMemo(() => new Map(students.map(s => [s.id, s])), [students])
   const studentName = (id: string | null) => {
     if (!id) return null
-    const s = students.find(st => st.id === id)
+    const s = studentById.get(id)
     return s ? `${s.first_name} ${s.last_name} (${s.student_code})` : `ID ${id}`
   }
 

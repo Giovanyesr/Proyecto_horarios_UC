@@ -21,7 +21,7 @@ export default function AllowedEmailsPage() {
     try {
       const [e, s] = await Promise.all([
         authApi.listAllowedEmails(),
-        studentsApi.list({ limit: 300 }),
+        studentsApi.list({ size: 200 }),
       ])
       setEmails(e)
       setStudents((s as any).items ?? s ?? [])
