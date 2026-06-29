@@ -42,7 +42,12 @@ node src/scripts/seedData.js
 El backend actúa como servidor API REST y aloja el motor matemático CSP.
 
 ### Paso 1: Configurar Variables de Entorno
-Cree un archivo `.env` en la carpeta [backend](file:///D:/Proyecto_horarios_UC/backend) con la configuración de producción:
+Cree un archivo `.env` en la carpeta [backend](file:///D:/Proyecto_horarios_UC/backend) con la configuración de producción. 
+
+> [!CAUTION]
+> Las credenciales de acceso a la base de datos y llaves de seguridad son confidenciales. Deben configurarse exclusivamente de manera local en el archivo `.env` (el cual está incluido en `.gitignore`) y **nunca** subirse al repositorio Git para prevenir fugas de credenciales en producción.
+
+En el archivo local `.env`, configure los siguientes parámetros:
 
 ```env
 # Configuración del Servidor
@@ -50,8 +55,8 @@ PORT=8000
 NODE_ENV=production
 CORS_ORIGIN=https://mi-dominio-sgoha.edu.pe   # URL pública del frontend React
 
-# Base de Datos y Seguridad
-MONGO_URI=mongodb+srv://admin_sgoha:SeguraKey2026@cluster.mongodb.net/sgoha_prod?retryWrites=true&w=majority
+# Base de Datos y Seguridad (Leída por el backend a través de process.env.MONGO_URI)
+MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/SGOHA?retryWrites=true&w=majority
 JWT_SECRET=C0nt1n3nt4l-2026-Super-Secret-Token-Key-!#$
 JWT_EXPIRES_IN=8h
 ```
