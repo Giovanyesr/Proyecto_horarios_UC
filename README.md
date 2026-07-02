@@ -167,7 +167,7 @@ Toda la documentación y actas de gestión del ciclo de vida del proyecto bajo e
 ## 8. Demostración y Video Explicativo
 Para visualizar la puesta en marcha, el flujo de usuario y la ejecución en tiempo real del motor de satisfacción de restricciones (CSP), acceda al video demostrativo de **máximo 5 minutos** a través del siguiente enlace:
 
-🎥 **[Ver Demostración del Sistema SGOHA (YouTube)](https://www.youtube.com/watch?v=dQw4w9WgXcQ)**
+🎥 **[Ver Demostración del Sistema SGOHA (YouTube)](hhttps://drive.google.com/file/d/12Cw9TnnHWNazW6Fzi4-glWPFLMWfS0pS/view?usp=sharing)**
 
 ---
 *Universidad Continental — Ingeniería de Sistemas e Informática — Taller de Proyectos 2 — 2026*
